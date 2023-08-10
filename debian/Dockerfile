@@ -1,4 +1,4 @@
-ARG JAVA_VERSION=17.0.7_7
+ARG JAVA_VERSION=17.0.8_7
 FROM eclipse-temurin:"${JAVA_VERSION}"-jdk-focal AS jre-build
 
 # This Build ARG is populated by Docker
@@ -54,13 +54,57 @@ RUN groupadd -g ${gid} ${group} \
 
 RUN apt-get update \
     && apt-get install --no-install-recommends -y \
-        ca-certificates \
-        git-lfs \
-        less \
-        netcat-traditional \
-        openssh-server \
-        patch \
+        ca-certificates git git-lfs less \
+        netcat-traditional openssh-server patch \
+        net-tools python bzip2 lbzip2 unzip netcat-openbsd rsync wget \
+        apt-transport-https ca-certificates curl gnupg2 software-properties-common \
+        iproute2 iputils-ping \
     && rm -rf /var/lib/apt/lists/*
+
+# Install few tools
+RUN curl -fsSSL https://download.docker.com/linux/debian/gpg | apt-key add - \
+    && add-apt-repository "deb [arch=$(dpkg --print-architecture)] https://download.docker.com/linux/debian $(lsb_release -cs) stable" \
+    && apt-get update \
+    && apt-get -y install docker-ce \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd -g 233 docker2 \
+    && groupadd -g 998 docker3 \
+    && groupadd -g 122 docker4 \
+    && usermod -a -G docker,docker2,docker3,docker4 "${user}"
+
+# bash as default shell
+RUN echo "dash dash/sh boolean false" | debconf-set-selections \
+    && mkdir -p /usr/share/man/man1/ \
+    && dpkg-reconfigure -p critical dash
+
+# Add Tini
+ENV TINI_VERSION v0.18.0
+RUN mkdir -p /opt/tini
+RUN wget https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-static-$(dpkg --print-architecture) \
+    -O /opt/tini/tini
+RUN chmod +x /opt/tini/tini
+
+# Add jq
+RUN if [[ "$(uname -m)" == "armv7l" ]]; then \
+        curl -fsSL https://github.com/jqlang/jq/releases/download/jq-1.7rc1/jq-linux-armhf -o /usr/bin/jq; \
+    else \
+        curl -fsSL https://github.com/swi-infra/jq/releases/download/v0.2.8/jq-$(dpkg --print-architecture) -o /usr/bin/jq; \
+    fi \
+    && chmod +x /usr/bin/jq
+
+# Add encaps
+RUN cd /usr/bin \
+    && wget https://github.com/swi-infra/jenkins-docker-encaps/archive/master.zip \
+    && unzip master.zip \
+    && mv jenkins-docker-encaps-master/encaps* . \
+    && rm -rf master.zip jenkins-docker-encaps-master
+
+# Add Agent
+ARG VERSION=4.9
+RUN curl --create-dirs -fsSLo /usr/share/jenkins/agent.jar https://repo.jenkins-ci.org/public/org/jenkins-ci/main/remoting/${VERSION}/remoting-${VERSION}.jar \
+    && chmod 755 /usr/share/jenkins \
+    && chmod 644 /usr/share/jenkins/agent.jar \
+    && ln -sf /usr/share/jenkins/agent.jar /home/jenkins/remoting.jar
 
 # setup SSH server
 RUN sed -i /etc/ssh/sshd_config \
@@ -72,7 +116,7 @@ RUN sed -i /etc/ssh/sshd_config \
     mkdir /var/run/sshd
 
 # VOLUME directive must happen after setting up permissions and content
-VOLUME "${AGENT_WORKDIR}" "${JENKINS_AGENT_HOME}"/.jenkins "/tmp" "/run" "/var/run"
+VOLUME "${AGENT_WORKDIR}" "${JENKINS_AGENT_HOME}"/.jenkins "/tmp" "/run" "/var/run" "/opt/tini"
 WORKDIR "${JENKINS_AGENT_HOME}"
 
 ENV LANG='C.UTF-8' LC_ALL='C.UTF-8'
@@ -85,8 +129,7 @@ RUN echo "PATH=${PATH}" >> /etc/environment
 COPY setup-sshd /usr/local/bin/setup-sshd
 
 EXPOSE 22
-
-ENTRYPOINT ["setup-sshd"]
+ENTRYPOINT ["/opt/tini/tini", "--", "/usr/local/bin/setup-sshd"]
 
 LABEL \
     org.opencontainers.image.vendor="Jenkins project" \

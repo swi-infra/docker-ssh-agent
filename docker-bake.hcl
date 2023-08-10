@@ -14,6 +14,13 @@ group "linux-arm64" {
   ]
 }
 
+group "linux-armv7" {
+  targets = [
+    "debian_jdk11",
+    "debian_jdk17",
+  ]
+}
+
 group "linux-s390x" {
   targets = [
     "debian_jdk11",
@@ -52,11 +59,11 @@ variable "ALPINE_SHORT_TAG" {
 }
 
 variable "JAVA11_VERSION" {
-  default = "11.0.19_7"
+  default = "11.0.20_8"
 }
 
 variable "JAVA17_VERSION" {
-  default = "17.0.7_7"
+  default = "17.0.8_7"
 }
 
 target "alpine_jdk17" {
@@ -115,7 +122,7 @@ target "debian_jdk11" {
     "${REGISTRY}/${JENKINS_REPO}:latest-debian-jdk11",
     "${REGISTRY}/${JENKINS_REPO}:latest-jdk11",
   ]
-  platforms = ["linux/amd64", "linux/arm64", "linux/s390x", "linux/ppc64le"]
+  platforms = ["linux/amd64", "linux/arm64", "linux/arm/v7", "linux/s390x", "linux/ppc64le"]
 }
 
 target "debian_jdk17" {
@@ -133,5 +140,5 @@ target "debian_jdk17" {
     "${REGISTRY}/${JENKINS_REPO}:latest-debian-jdk17",
     "${REGISTRY}/${JENKINS_REPO}:latest-jdk17",
   ]
-  platforms = ["linux/amd64", "linux/arm64", "linux/ppc64le"]
+  platforms = ["linux/amd64", "linux/arm64", "linux/arm/v7", "linux/ppc64le"]
 }
