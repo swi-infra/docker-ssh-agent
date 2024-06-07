@@ -23,7 +23,7 @@ $baseDockerCmd = 'docker-compose --file=build-windows.yaml'
 $baseDockerBuildCmd = '{0} build --parallel --pull' -f $baseDockerCmd
 
 if(![String]::IsNullOrWhiteSpace($env:TESTS_DEBUG)) {
-    $ImageType = $env:IMAGE_TYPE
+    $TestsDebug = $env:TESTS_DEBUG
 }
 $env:TESTS_DEBUG = $TestsDebug
 
