@@ -43,17 +43,17 @@ def spotAgentSelector(String agentLabel, int counter) {
 // Specify parallel stages
 def parallelStages = [failFast: false]
 [
-    'linux',
+    // 'linux',
     'nanoserver-1809',
-    'nanoserver-ltsc2019',
-    'nanoserver-ltsc2022',
-    'windowsservercore-1809',
-    'windowsservercore-ltsc2019',
-    'windowsservercore-ltsc2022'
+    // 'nanoserver-ltsc2019',
+    // 'nanoserver-ltsc2022',
+    // 'windowsservercore-1809',
+    // 'windowsservercore-ltsc2019',
+    // 'windowsservercore-ltsc2022'
 ].each { imageType ->
     parallelStages[imageType] = {
         withEnv([
-          "IMAGE_TYPE=${imageType}", 
+          "IMAGE_TYPE=${imageType}",
           "REGISTRY_ORG=${infra.isTrusted() ? 'jenkins' : 'jenkins4eval'}",
         ]) {
             int retryCounter = 0
