@@ -94,6 +94,7 @@ def parallelStages = [failFast: false]
                                     sh 'make build'
                                     sh 'make test'
                                 } else {
+                                    powershell 'docker pull jenkins/ssh-agent:nanoserver-1809-jdk17'
                                     powershell '& ./build.ps1 test'
                                     archiveArtifacts artifacts: 'build-windows_*.yaml', allowEmptyArchive: true
                                 }
