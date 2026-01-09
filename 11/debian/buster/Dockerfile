@@ -20,7 +20,8 @@
 #  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 #  THE SOFTWARE.
 
-FROM openjdk:11-jdk-buster
+FROM eclipse-temurin:21-jdk-jammy
+LABEL maintainer="Central Engineering <central-eng@semtech.com>"
 
 ARG user=jenkins
 ARG group=jenkins
