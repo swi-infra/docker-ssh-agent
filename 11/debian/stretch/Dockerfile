@@ -20,7 +20,7 @@
 #  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 #  THE SOFTWARE.
 
-FROM openjdk:11-jdk-stretch
+FROM eclipse-temurin:21-jdk-jammy
 LABEL MAINTAINER="Nicolas De Loof <nicolas.deloof@gmail.com>"
 
 ARG user=jenkins
@@ -53,16 +53,16 @@ RUN ln -sf $(which java) /usr/bin/java
 
 EXPOSE 22
 
-# Install few tools, including git from backports
+# Install few tools
 RUN ( \
-      echo "deb http://ftp.debian.org/debian stretch-backports main" >> /etc/apt/sources.list && \
       apt-get update && \
-      apt-get -y install -t stretch-backports git git-lfs && \
-      apt-get -y install net-tools python bzip2 lbzip2 unzip netcat-openbsd rsync wget \
+      apt-get -y install git git-lfs net-tools python3 bzip2 lbzip2 unzip netcat-openbsd rsync wget \
                          apt-transport-https ca-certificates curl gnupg2 software-properties-common \
                          iproute2 iputils-ping && \
-      curl -fsSSL https://download.docker.com/linux/debian/gpg | apt-key add - && \
-      add-apt-repository "deb [arch=$(dpkg --print-architecture)] https://download.docker.com/linux/debian $(lsb_release -cs) stable" && \
+      install -m 0755 -d /etc/apt/keyrings && \
+      curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg && \
+      chmod a+r /etc/apt/keyrings/docker.gpg && \
+      echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null && \
       apt-get update && \
       apt-get -y install docker-ce && \
       rm -rf /var/lib/apt/lists/* && \
@@ -104,7 +104,7 @@ RUN ( \
     )
 
 # Add Agent
-ARG VERSION=4.5
+ARG VERSION=3327.v868139a_d00e0
 RUN ( \
         curl --create-dirs -fsSLo /usr/share/jenkins/slave.jar https://repo.jenkins-ci.org/public/org/jenkins-ci/main/remoting/${VERSION}/remoting-${VERSION}.jar \
         && chmod 755 /usr/share/jenkins \
